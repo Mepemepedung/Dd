@@ -1,90 +1,27 @@
-test
-test
-test
-test
-test
-test
-test
-testopiashdou6t  iutfasiytdf  yt8fatysrfd  iytftsyf  86FRT  TYF  TF      IOYAGSD  
-ASDH
-test
-test
-test
-test
-test
-test
-test
-testopiashdou6t  iutfasiytdf  yt8fatysrfd  iytftsyf  86FRT  TYF  TF      IOYAGSD  
-ASDH
-test
-test
-test
-test
-test
-test
-test
-testopiashdou6t  iutfasiytdf  yt8fatysrfd  iytftsyf  86FRT  TYF  TF      IOYAGSD  
-ASDH
-test
-test
-test
-test
-test
-test
-test
-testopiashdou6t  iutfasiytdf  yt8fatysrfd  iytftsyf  86FRT  TYF  TF      IOYAGSD  
-ASDH
-test
-test
-test
-test
-test
-test
-test
-testopiashdou6t  iutfasiytdf  yt8fatysrfd  iytftsyf  86FRT  TYF  TF      IOYAGSD  
-ASDH
-test
-test
-test
-test
-test
-test
-test
-testopiashdou6t  iutfasiytdf  yt8fatysrfd  iytftsyf  86FRT  TYF  TF      IOYAGSD  
-ASDH
-test
-test
-test
-test
-test
-test
-test
-testopiashdou6t  iutfasiytdf  yt8fatysrfd  iytftsyf  86FRT  TYF  TF      IOYAGSD  
-ASDH
-test
-test
-test
-test
-test
-test
-test
-testopiashdou6t  iutfasiytdf  yt8fatysrfd  iytftsyf  86FRT  TYF  TF      IOYAGSD  
-ASDH
-test
-test
-test
-test
-test
-test
-test
-testopiashdou6t  iutfasiytdf  yt8fatysrfd  iytftsyf  86FRT  TYF  TF      IOYAGSD  
-ASDH
-test
-test
-test
-test
-test
-test
-test
-testopiashdou6t  iutfasiytdf  yt8fatysrfd  iytftsyf  86FRT  TYF  TF      IOYAGSD  
-ASDH
+function fastPing(ip) {
+    const startTime = Date.now();  // Record the start time
+    
+    // Send a simple HTTP request to the IP address (Google's DNS 8.8.8.8)
+    fetch(`http://${ip}`, {
+        method: 'HEAD', // Use HEAD to minimize data transfer (like a lightweight ping)
+        cache: 'no-store', // Disable caching for fresh request each time
+        timeout: 1000, // Set a timeout of 1 second
+    })
+    .then(response => {
+        const endTime = Date.now(); // Record the end time when response is received
+        console.log(`Ping to ${ip} took ${endTime - startTime} ms`);
+    })
+    .catch(error => {
+        console.error(`Error pinging ${ip}:`, error);
+    });
+}
+
+// Fast continuous pinging
+function continuousPing(ip, interval) {
+    setInterval(() => {
+        fastPing(ip);
+    }, interval); // Interval in milliseconds (e.g., 100ms for very fast pings)
+}
+
+// Start continuous pinging 8.8.8.8 with a 100ms interval for ultra-fast speed
+continuousPing('8.8.8.8', 100);
