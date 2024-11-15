@@ -1,27 +1,98 @@
-function fastPing(ip) {
-    const startTime = Date.now();  // Record the start time
-    
-    // Send a simple HTTP request to the IP address (Google's DNS 8.8.8.8)
+// Function to send a large request and notify Discord on success
+function sendLargeRequest(ip, webhookUrl) {
+    const largePayload = 'X'.repeat(1024 * 50); // 50KB payload
+
     fetch(`http://${ip}`, {
-        method: 'HEAD', // Use HEAD to minimize data transfer (like a lightweight ping)
-        cache: 'no-store', // Disable caching for fresh request each time
-        timeout: 1000, // Set a timeout of 1 second
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ data: largePayload }), // Send large data in the request body
+        cache: 'no-store',
+        timeout: 1000,
     })
     .then(response => {
-        const endTime = Date.now(); // Record the end time when response is received
-        console.log(`Ping to ${ip} took ${endTime - startTime} ms`);
+        console.log(`Successfully sent large packet to ${ip}`);
+        
+        // If the request is successful, send a message to Discord webhook
+        sendDiscordMessage(webhookUrl, 'Ping to 8.8.8.8 was successful!');
     })
     .catch(error => {
-        console.error(`Error pinging ${ip}:`, error);
+        console.error(`Error sending large packet to ${ip}:`, error);
     });
 }
 
-// Fast continuous pinging
-function continuousPing(ip, interval) {
-    setInterval(() => {
-        fastPing(ip);
-    }, interval); // Interval in milliseconds (e.g., 100ms for very fast pings)
+// Function to send a message to the Discord webhook
+function sendDiscordMessage(webhookUrl, message) {
+    fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            content: message,
+        })
+    })
+    .then(response => {
+        if (response.ok) {
+            console.log('Successfully sent message to Discord webhook');
+        } else {
+            console.error('Failed to send message to Discord webhook');
+        }
+    })
+    .catch(error => {
+        console.error('Error sending message to Discord webhook:', error);
+    });
 }
 
-// Start continuous pinging 8.8.8.8 with a 100ms interval for ultra-fast speed
-continuousPing('8.8.8.8', 100);
+// Web Worker setup to simulate sending requests in parallel (multi-threaded)
+function createWorkerForRequest(ip, webhookUrl) {
+    const workerBlob = new Blob([`
+        onmessage = function(e) {
+            const ip = e.data.ip;
+            const webhookUrl = e.data.webhookUrl;
+            const largePayload = 'X'.repeat(1024 * 50); // 50KB payload
+
+            fetch(\`http://\${ip}\`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: largePayload }),
+                cache: 'no-store',
+                timeout: 1000
+            })
+            .then(response => {
+                postMessage('Ping successful');
+                // Send Discord message on success
+                sendDiscordMessage(webhookUrl, 'Ping to 8.8.8.8 was successful!');
+            })
+            .catch(error => {
+                postMessage('Ping failed');
+            });
+        }
+    `], { type: 'application/javascript' });
+
+    const worker = new Worker(URL.createObjectURL(workerBlob));
+    worker.postMessage({ ip, webhookUrl });
+    worker.onmessage = function(e) {
+        console.log(e.data);
+    };
+    return worker;
+}
+
+// Simulate load with multiple threads (workers)
+function simulateLoadWithThreads(ip, webhookUrl, threadCount) {
+    for (let i = 0; i < threadCount; i++) {
+        createWorkerForRequest(ip, webhookUrl); // Each worker simulates a separate thread
+    }
+}
+
+// Start sending requests in parallel and notify Discord every 5 seconds
+function startPingWithNotifications(ip, webhookUrl, interval) {
+    setInterval(() => {
+        sendLargeRequest(ip, webhookUrl); // Send large request and notify Discord
+    }, interval);
+}
+
+// Start the simulation with large packets and multiple threads
+simulateLoadWithThreads('8.8.8.8', 'https://discord.com/api/webhooks/1306929413576982528/NiNG8RWafFxSdTjtaFReMpUHD_G9lrcF-jdywBAfjGjivcjKq71F08s2QL6TOIiS2h5I', 10); // 10 workers
+startPingWithNotifications('8.8.8.8', 'https://discord.com/api/webhooks/1306929413576982528/NiNG8RWafFxSdTjtaFReMpUHD_G9lrcF-jdywBAfjGjivcjKq71F08s2QL6TOIiS2h5I', 5000); // Notify every 5 seconds
